@@ -115,7 +115,9 @@ return;
 
   
 Future<http.Response> _postRequest() async {
+
       SharedPreferences prefs = await SharedPreferences.getInstance();
+    print("\n\nMy contribution is:" + prefs.getString('contribution'));
     Map data = {
       'name' :prefs.getString('name'),
     'mobile':prefs.getString('mobno'),
@@ -344,7 +346,7 @@ void dispose(){
                         setState(
                               () {
                             _dropDownValueC = val;
-                            professional = val;
+                          contribution = val;
                           
                           contrifocus.unfocus();
                           },
@@ -475,7 +477,8 @@ prefs.setString('longitude', _locationData.longitude.toString());*/
   }
   storeData() async {
 
-
+print("My professional:"+professional);
+print("My contribution:"+contribution);
     SharedPreferences prefs = await SharedPreferences.getInstance();
     setState(() {
 

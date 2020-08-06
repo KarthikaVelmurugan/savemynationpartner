@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:background_location/background_location.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
@@ -66,10 +67,13 @@ class _SplashScreenState extends State<SplashScreen> {
     toast(context,"User enter into registration page");
     Navigator.of(context).pushReplacementNamed('/WelcomePage');
   }
-
+String fetchlatitude ='';
+String fetchlongitude='';
+String time='';
  @override
   void initState() {
     super.initState();
+      
     startTime();
 
    

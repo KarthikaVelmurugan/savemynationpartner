@@ -1,4 +1,5 @@
 
+import 'dart:async';
 import 'dart:convert';
 import 'package:background_location/background_location.dart';
 import 'package:flutter/services.dart';
@@ -26,14 +27,15 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  static const platform =const MethodChannel("com.flutter.epic/epic");
+ 
     static String url,name,email,professional,state,address,district,mobnum;
     String fetchlatitude='';
     String fetchlongitude='';
     String alatitude ='';
     String alongitude='';
-    String time;
-    
+    String time='';
+    Timer timer;
+int i=0;
   int _selectedIndex = 0;
     Future<List> a;
   List lis = [];
@@ -41,14 +43,14 @@ class _HomePageState extends State<HomePage> {
   List mlis =[];
   List flis=[];
   final controller = ScrollController();
-
+ 
 bool _serviceEnabled;
 PermissionStatus _permissionGranted;
 LocationData _locationData;
 
 
-
 Future<List<ConData>> fun() async {
+ // getLocation();
      lis.clear();
     glis.clear();
     flis.clear();
@@ -121,43 +123,52 @@ Future<List<ConData>> fun() async {
 @override
 void initState(){
   super.initState();
+  i=2;
   checkingnet(context);
- Printy();
+
   getLocation();
   fun();
-  /* BackgroundLocation.startLocationService();
-    BackgroundLocation.getLocationUpdates((location) {
+
+
+  BackgroundLocation.startLocationService();
+ /* BackgroundLocation().getCurrentLocation().then((location) {
+      fetchlatitude = location.latitude.toString();
+      fetchlongitude = location.longitude.toString();
+      print("This is current Location" + location.longitude.toString());
+     // findkm();
+      
+    });*/
+
+   BackgroundLocation.getLocationUpdates((location) {
+  print("Geofence Trigger in every 1 min");
       setState(() {
         this.fetchlatitude = location.latitude.toString();
         this.fetchlongitude = location.longitude.toString();
        
-        this.time = DateTime.fromMillisecondsSinceEpoch(location.time.toInt())
+        time = DateTime.fromMillisecondsSinceEpoch(location.time.toInt())
             .toString();
       });
-  getCurrentLocation();
+        print("After 500ms to get Location :");
+     
+      getCurrentLocation();
+  
       print("""\n
       Latitude:  $fetchlatitude
       Longitude: $fetchlongitude
     
       Time: $time
       """);
-    });*/
+    
+    });
 
 
 
+     
+      
 
 }
 
-void Printy() async{
-  String value;
-  try{
-value = await platform.invokeMethod("Printy");
-  }
-  catch(e){
-    print("Exception occured in platform call"+e);
-  }
-  print("value is"+value);
-}
+
 void getLocation() async {
 _serviceEnabled = await location.serviceEnabled();
 if (!_serviceEnabled) {
@@ -192,10 +203,10 @@ if (_permissionGranted == PermissionStatus.denied) {
 
 _locationData = await location.getLocation();
 print(_locationData.latitude);
+
 SharedPreferences prefs = await SharedPreferences.getInstance();
 prefs.setString('latitude', _locationData.latitude.toString());
 prefs.setString('longitude', _locationData.longitude.toString());
-
 
 
 
@@ -203,20 +214,34 @@ prefs.setString('longitude', _locationData.longitude.toString());
 
 
    
-
- /*getCurrentLocation() async {
+ getCurrentLocation() async {
     BackgroundLocation().getCurrentLocation().then((location) {
+      fetchlatitude = location.latitude.toString();
+      fetchlongitude = location.longitude.toString();
       print("This is current Location" + location.longitude.toString());
     });
-     findkm();
+     timer = Timer.periodic(Duration(seconds:20),(Timer t){
+findkm();
+   
+ });
+  
+    
+    
+    
+
   }
   findkm() async{
     final Distance distance = new Distance();
-   // getCurrentLocation();
+
   SharedPreferences prefs = await SharedPreferences.getInstance();
   alatitude = prefs.getString('latitude');
   alongitude = prefs.getString('longitude');
-final double  m = distance.as(LengthUnit.Kilometer,
+ 
+  print("my altitude: "+alatitude);
+  print("my alongitude :"+alongitude);
+  print("my fetchlatitude:"+fetchlatitude);
+  print("my fetchlongitude :"+fetchlongitude);
+ final double m = distance.as(LengthUnit.Kilometer,
                 new LatLng(double.parse(alatitude),double.parse(alongitude)),new LatLng(double.parse(fetchlatitude),
                 double.parse(fetchlongitude)));    
     
@@ -224,13 +249,55 @@ final double  m = distance.as(LengthUnit.Kilometer,
  
   print("Meter value:"+m.toString());
   toast(context,"Your Meter value :$m\nHomeLatitude : $alatitude\nHomeLongitude:$alongitude\n\nBackgroundLatitude:$fetchlatitude\nBackgroundlongitude:$fetchlongitude");
-  if(m <10){
+  if(m <1){
     toast(context,"You are in inside of Home\n");
+    callGeofenceApi();
   }
   else{
     toast(context,"you are in outside of Home\n");
+    callGeofenceApi();
   }
-  }*/
+ 
+  }
+  void callGeofenceApi() async{
+
+
+    try{
+   
+
+
+  
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    print("details\n\n");
+    print(fetchlatitude);
+     print(fetchlongitude);
+      print(prefs.getString('mobno'));
+       print(prefs.getString('stoken'));
+     
+  String listurl = 'https://api.savemynation.com/api/partner/savepartner/geolocation';
+Map data={
+'mobile': prefs.getString('mobno'),
+'device_latitude':fetchlatitude ,
+'device_longitude':fetchlongitude,
+'sessionToken':prefs.getString('stoken'),
+};
+print("call of Geofence API");
+var response = await http.post(listurl,
+  
+  headers: {"Content-Type":"application/x-www-form-urlencoded"},
+  body: data,
+  encoding: Encoding.getByName("gzip"));
+   i=0;
+    print(response.body);
+    toast(context,response.body);
+
+ 
+  }
+
+  catch(e){
+    print("Exception arais in geofence api call"+e);
+      }
+  }
 void getData() async{
 
 
@@ -267,36 +334,73 @@ void handleClick(String value) {
     }
 }
 
+@override
+void dispose(){
+  
+  super.dispose();
+}
 
   @override
-  Widget build(BuildContext context) {   
+  Widget build(BuildContext context) { 
+    
    if(checknet =='connected'){
-   /*   BackgroundLocation.startLocationService();
-    BackgroundLocation.getLocationUpdates((location) {
+     
+
+    
+      
+ BackgroundLocation.getLocationUpdates((location) {
+  print("Geofence Trigger in every 1 min");
       setState(() {
-        this.fetchlatitude = location.latitude.toString();
-        this.fetchlongitude = location.longitude.toString();
+       this.fetchlatitude = location.latitude.toString();
+       this. fetchlongitude = location.longitude.toString();
        
-        this.time = DateTime.fromMillisecondsSinceEpoch(location.time.toInt())
+        time = DateTime.fromMillisecondsSinceEpoch(location.time.toInt())
             .toString();
       });
- // getCurrentLocation();
+        print("After 500ms to get Location :");
+    
+
       print("""\n
       Latitude:  $fetchlatitude
       Longitude: $fetchlongitude
     
       Time: $time
       """);
-    });
-*/
-
-
-
-
-     getLocation();
-     //getCurrentLocation();
+      //findkm();
+    // getCurrentLocation();
     
+    });
+
+  /* BackgroundLocation.getLocationUpdates((location) {
+      setState(() {
+      fetchlatitude = location.latitude.toString();
+        fetchlongitude = location.longitude.toString();
+       
+        time = DateTime.fromMillisecondsSinceEpoch(location.time.toInt())
+            .toString();
+      });
+      
+ getCurrentLocation();
+      print("""\n
+      Latitude:  $fetchlatitude
+      Longitude: $fetchlongitude
+    
+      Time: $time
+      """);
+  
+
+
+   });}*/
+
+
+    // getLocation();
+   
+  //print("Geofence Trigger in every 1 min");
+   // findkm();
+      //});
+    // getCurrentLocation();
    }
+   
     final List<Widget> _widgetOptions = <Widget>[
     Activity(),
    Grocery(grocery:glis),
@@ -483,7 +587,7 @@ var response = await http.post(listurl,
   }
  
   
-}
+  }
 
 
 
